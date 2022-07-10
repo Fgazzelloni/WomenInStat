@@ -6,6 +6,7 @@ library(extrafont)
 
 library(webshot)
 library(htmlwidgets)
+library(ggthemes)
 
 # Recent Tweets where "WomenInStat" is in
 wis_recent_mentions<- rtweet::search_tweets("WomenInStat",
@@ -152,13 +153,13 @@ df %>%
     mutate(location=case_when(location==""~"Unknown",TRUE~location),
            date=as.Date(created_at)) %>%
     filter(created_at>="2022-07-04") %>% #DataExplorer::profile_missing()
-    count(date) %>%
+    count(date,location) %>%
     ggplot(aes(date,n,fill=n))+
     geom_col()+
     guides(color="none")+
     viridis::scale_fill_viridis() +
     labs(title="Number of Tweets",
-         subtitle="Jul 04 to Jul 07",
+         subtitle="Jul 04 to Jul 10 2022",
          x="Created at",y="N.",
          caption="DataSource: Twitter API @WomenInStat | Graphics: @fgazzelloni")+
     ggthemes::theme_fivethirtyeight()+
@@ -166,10 +167,49 @@ df %>%
           plot.title.position = "plot")
 
   
-  # ggsave("images/n_tweets.png")  
+  ggsave("images/n_tweets.png")  
   
   
+  # location-----
+  df%>%#count(screen_name)
+    mutate(location=case_when(location==""~"Unknown",TRUE~location),
+           date=as.Date(created_at)) %>%
+    filter(created_at>="2022-07-04") %>% #DataExplorer::profile_missing()
+    count(date,location) %>%
+    ggplot(aes(factor(date),log(n),fill=location))+
+    geom_point(aes(alpha=n),
+               shape=21,stroke=0.8,
+               show.legend = F,size=50)+
+    ggrepel::geom_text_repel(aes(label=location),
+                             max.overlaps = Inf,
+                             vjust = "top", 
+                             family="Roboto Condensed")+
+    scale_alpha()+
+    scale_fill_manual(values=RColorBrewer::brewer.pal(11,"Paired"))+
+    ggthemes::scale_color_fivethirtyeight()+
+    labs(title="@WomenInStat Twitter API location of interaction",
+         subtitle="Jul 04 to Jul 10 2022",
+         x="Created at",y="Count",
+         caption="DataSource: Twitter API @WomenInStat | Graphics: @fgazzelloni")+
+    ggthemes::theme_fivethirtyeight() +
+    theme(text=element_text(family="Roboto Condensed",face="bold"),
+          panel.grid.major.x = element_line(size=30,color="grey90"),
+          axis.title = element_text())
   
   
-  
-  
+ggsave("images/location2.png",
+       width = 10,
+       height = 8)  
+
+
+
+df2<-df%>%#count(screen_name)
+  mutate(location=case_when(location==""~"Unknown",TRUE~location),
+         date=as.Date(created_at)) %>%
+  filter(created_at>="2022-07-04") %>% #DataExplorer::profile_missing()
+  count(location) %>%
+  mutate(pct=n/sum(n)*100) %>%
+  arrange(-pct)
+
+
+sum(df2$pct)
