@@ -49,7 +49,9 @@ df <- wis_recent_mentions %>%
   # ggsave("images/rtvsfav.png")
   
   
-  #-------
+  
+  
+  #-------get_timelines---------
   
   library(tm)            # Text mining cleaning
   library(stringr)       # Removing characters
@@ -63,7 +65,12 @@ tweets2 <-tweets %>%
   filter(created_at>="2022-07-04") %>%
   mutate(date=lubridate::day(created_at)) #%>%
   #count(date) 
-     
+
+features <-tweets2 %>% DataExplorer::profile_missing() %>%
+  arrange(-pct_missing)%>%
+  filter(pct_missing<=0) %>%
+  count(feature) %>%select(-n) %>% unlist()
+  
 
 text <- str_c(tweets2$text, collapse = "")
   
@@ -73,8 +80,9 @@ text2 <-
     str_remove("\\n") %>%                   # remove linebreaks
     rm_twitter_url() %>%                    # Remove URLS
     rm_url() %>%
+    rm_non_words() %>%
     str_remove_all("#\\S+") %>%             # Remove any hashtags
-    str_remove_all("@\\S+") %>% # Remove any @ mentions
+    str_remove_all("@\\S+") %>%             # Remove any @ mentions
     removeWords(stopwords("english")) %>%   # Remove common words (a, the, it etc.)
     removeNumbers() %>%
     stripWhitespace() %>%
@@ -92,19 +100,52 @@ textCorpus <- data.frame(word = names(textCorpus),
                          row.names = NULL)
 
 
-# build wordcloud 
+# build wordcloud -------
 wordcloud <- wordcloud2(data = textCorpus, 
                         minRotation = 0, 
                         maxRotation = 0, 
-                        ellipticity = 0.2)
+                        ellipticity = 0.6)
 wordcloud 
 
 
 
 saveWidget(wordcloud, "tmp.html", selfcontained = F)
-webshot("tmp.html", "wordcloud.png", delay = 120, vwidth = 2000, vheight = 2000)
+webshot("tmp.html", "images/wordcloud3.png")
+unlink()  
+
+
+#-----------
+
+idx <- match(features, names(tweets2))
+
+df <- tweets2 %>%#count(name)
+  arrange(created_at) %>% 
+  select(idx) %>% 
+select(text,display_text_width,is_quote:retweet_count,date)
+
+
+df%>%head
+df %>%
+  ggplot(aes(x=factor(date),y=favorite_count))+
+  geom_col(aes(fill=retweet_count))
+  coord_polar()
   
-  
+  df %>%
+    ggplot(aes(x=factor(date),y=display_text_width))+
+    geom_col(aes(fill=is_retweet)) +
+    ggthemes::scale_fill_fivethirtyeight()+
+    labs(title="@WomenInStat Twitter account",
+         subtitle="Counts of Text width for tweets and retweets 2022 July 04-10",
+         caption="DataSource: Twitter API @WomenInStat\nGraphics: Federica Gazzelloni (@fgazzelloni)",
+         fill="Is retweet ?",
+         x="July day",y="Text width") +
+    ggthemes::theme_fivethirtyeight()+
+    theme(text = element_text(family = "Roboto Condensed"),
+          axis.title = element_text())
+
+  ggsave("images/tweets_retweets.png",
+         width = 8,
+         height = 6)    
   
   
   
