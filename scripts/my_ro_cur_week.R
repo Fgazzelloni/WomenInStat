@@ -110,7 +110,7 @@ wordcloud
 
 
 saveWidget(wordcloud, "tmp.html", selfcontained = F)
-webshot("tmp.html", "images/wordcloud3.png")
+webshot("tmp.html", "images/wordcloud2.png")
 unlink()  
 
 
@@ -147,6 +147,26 @@ df %>%
          width = 8,
          height = 6)    
   
+  #-n tweets ------
+  df%>%
+    mutate(location=case_when(location==""~"Unknown",TRUE~location),
+           date=as.Date(created_at)) %>%
+    filter(created_at>="2022-07-04") %>% #DataExplorer::profile_missing()
+    count(date) %>%
+    ggplot(aes(date,n,fill=n))+
+    geom_col()+
+    guides(color="none")+
+    viridis::scale_fill_viridis() +
+    labs(title="Number of Tweets",
+         subtitle="Jul 04 to Jul 07",
+         x="Created at",y="N.",
+         caption="DataSource: Twitter API @WomenInStat | Graphics: @fgazzelloni")+
+    ggthemes::theme_fivethirtyeight()+
+    theme(plot.title = element_text(size=24),
+          plot.title.position = "plot")
+
+  
+  # ggsave("images/n_tweets.png")  
   
   
   
