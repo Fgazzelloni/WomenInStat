@@ -3,9 +3,12 @@ library(tm)            # Text mining cleaning
 library(stringr)       # Removing characters
 library(qdapRegex)     # Removing URLs 
 library(wordcloud2)    # Creating the wordcloud
+library(tidyverse)
 
+tweets<- get_timelines(c("WomenInStat"), n = 1000) #WomenInStat
+tweets%>%dim
+tweets<-tweets%>% filter(created_at>="2022-07-04")
 
-tweets<- get_timelines(c("WomenInStat"), n = 200) #WomenInStat
 text <- str_c(tweets$text, collapse = "")
 text <- 
   text %>%
